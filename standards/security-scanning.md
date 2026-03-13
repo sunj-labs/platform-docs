@@ -5,10 +5,10 @@ Three layers. All run in CI via GitHub Actions, blocking merge on failure.
 ## Pipeline Order
 
 ```
-push → secret scan → lint → SAST → dependency audit → test → build → deploy
-       ^^^^^^^^^^^^                 ^^^^^^^^^^^^^^^^^
-       Fail fast on                 Fail on known
-       leaked creds                 vulnerabilities
+push → secret scan → lint → typecheck → SAST → dependency audit → test → build → deploy
+       ^^^^^^^^^^^^                      ^^^^   ^^^^^^^^^^^^^^^^^
+       Fail fast on                      Catch  Fail on known
+       leaked creds                      vulns  vulnerabilities
 ```
 
 ## Layer 1: Secret Detection (pre-commit + CI)
@@ -17,7 +17,7 @@ push → secret scan → lint → SAST → dependency audit → test → build �
 
 **What it catches:** API keys, OAuth tokens, AWS credentials, passwords, private keys.
 
-**Critical for:** Anthropic API keys, Gmail OAuth tokens, Apollo.io keys, AWS credentials, Brave Search API key.
+**Critical for:** Anthropic API keys, NextAuth secrets, OAuth tokens, AWS credentials.
 
 **CI config:**
 ```yaml
@@ -26,6 +26,14 @@ push → secret scan → lint → SAST → dependency audit → test → build �
 ```
 
 **Local pre-commit hook** (so secrets never reach the remote):
+
+Option A — husky (Node-native):
+```bash
+# .husky/pre-commit
+npx gitleaks detect --source . --verbose
+```
+
+Option B — pre-commit framework:
 ```yaml
 # .pre-commit-config.yaml
 repos:
@@ -35,40 +43,63 @@ repos:
       - id: gitleaks
 ```
 
-Install: `pip install pre-commit && pre-commit install`
+Install: `npm pkg set scripts.prepare="husky"` (Option A) or `pip install pre-commit && pre-commit install` (Option B).
 
 ## Layer 2: Dependency Vulnerabilities (CI)
 
-**Tool:** pip-audit (Python), npm audit (Node)
+**Tool:** npm audit
 
 **What it catches:** Known CVEs in installed packages.
 
 ```yaml
-- name: Python dependency audit
-  run: pip-audit --strict
-
-- name: Node dependency audit  # if repo uses Node
+- name: Dependency audit
   run: npm audit --audit-level=high
+```
+
+For stricter enforcement, use `better-npm-audit` or `audit-ci`:
+```yaml
+- name: Dependency audit
+  run: npx audit-ci --high
 ```
 
 ## Layer 3: Static Analysis / SAST (CI)
 
-**Tool:** bandit (Python)
+**Tool:** ESLint security plugins + TypeScript compiler
 
-**What it catches:** SQL injection, hardcoded passwords, unsafe deserialization, shell injection.
+**What it catches:** Injection risks, unsafe patterns, type errors.
 
 ```yaml
-- name: Python security scan
-  run: bandit -r src/ -ll -q
+- name: Type check
+  run: npx tsc --noEmit
+
+- name: Lint + security rules
+  run: npx eslint . --max-warnings 0
+```
+
+ESLint security plugins to include:
+- `eslint-plugin-security` — detects unsafe regex, eval, non-literal require
+- `@typescript-eslint/eslint-plugin` — type-aware linting rules
+- `eslint-plugin-no-secrets` — catches hardcoded secrets in source
+
+For deeper SAST (optional, as complexity grows):
+- **Semgrep** — language-aware static analysis, free tier, TypeScript support
+```yaml
+- name: SAST
+  uses: returntocorp/semgrep-action@v1
+  with:
+    config: p/typescript
 ```
 
 ## Linting (separate from security, same pipeline)
 
-**Tool:** ruff (Python)
+**Tool:** ESLint + Prettier
 
 ```yaml
 - name: Lint
-  run: ruff check src/
+  run: npx eslint .
+
+- name: Format check
+  run: npx prettier --check .
 ```
 
 ## Adding to a New Repo
@@ -86,7 +117,7 @@ on:
 
 jobs:
   ci:
-    uses: sunj-labs/.github/.github/workflows/python-ci.yml@main
+    uses: sunj-labs/.github/.github/workflows/ts-ci.yml@main
 ```
 
 That's it. The reusable workflow handles the full pipeline.

@@ -1,34 +1,57 @@
-# Frontend Stack Standard
+# Application Stack Standard
 
 ## Decision
 
-Next.js + TypeScript + Tailwind CSS + shadcn/ui
+Full TypeScript stack. One language from database to UI.
 
-See [ADR-004](../architecture/decisions/ADR-004-frontend-stack.md) for rationale.
+See [ADR-008](../architecture/decisions/ADR-008-full-typescript-stack.md) for rationale.
 
 ## Stack
 
 ```
 Next.js 14+ (App Router)
-├── TypeScript         — type safety for real-money decisions
-├── Tailwind CSS       — design tokens map directly to utilities
-├── shadcn/ui          — copy-paste components you own and customize
-└── Deploy via:
-    ├── GitHub Pages    — static export, prototypes, zero cost
-    └── Docker on EC2   — production, backend integration, Tailscale mesh
+├── TypeScript (strict)   — end-to-end type safety
+├── Prisma + Postgres     — ORM, migrations, type-safe queries
+├── NextAuth.js           — auth for operator, family, collaborators
+├── BullMQ + Redis        — async job queue, scheduling, retries
+├── Anthropic TS SDK      — LLM calls inside tools
+├── Langfuse TS SDK       — tracing, evals
+├── Tailwind CSS          — design tokens map to utilities
+├── shadcn/ui             — copy-paste components you own
+└── Deploy: Docker on EC2 via Tailscale
 ```
 
-## Deployment Tiers
+## Project Structure
 
-See [ADR-005](../architecture/decisions/ADR-005-frontend-deploy-tiers.md) for rationale.
-
-| Tier | When | Where | Cost |
-|------|------|-------|------|
-| **Mockup** | Exploring layout, rapid iteration, disposable | Claude artifacts, local dev, single HTML file | $0 |
-| **Prototype** | Shareable link, multi-page flows, mock data | GitHub Pages (`output: 'export'`) | $0 |
-| **Production** | Real data, persistent state, backend integration | Docker on EC2 via Tailscale | $0 marginal |
-
-Start every frontend at Tier 0 (mockup). Graduate only when the current tier blocks progress.
+```
+app/
+├── (dashboard)/          — authenticated pages
+│   ├── deals/
+│   ├── tools/
+│   └── admin/queues/     — Bull Board (operator-only)
+├── api/
+│   ├── health/           — healthcheck endpoint
+│   ├── tools/            — tool trigger endpoints
+│   └── auth/             — NextAuth routes
+├── layout.tsx
+└── page.tsx
+src/
+├── tools/                — tool implementations
+│   ├── registry.ts       — tool registry (name, description, params, run fn)
+│   ├── scrappy-scrapper.ts
+│   ├── deal-scorer.ts
+│   └── inbox-classifier.ts
+├── lib/
+│   ├── queue.ts          — BullMQ queue + worker setup
+│   ├── langfuse.ts       — Langfuse client
+│   └── anthropic.ts      — Anthropic client wrapper
+└── components/
+    └── ui/               — shadcn/ui components
+prisma/
+├── schema.prisma         — single source of truth for DB schema
+├── migrations/           — Prisma migrations (committed to git)
+└── seed.ts               — deterministic seed data
+```
 
 ## Conventions
 
@@ -36,12 +59,26 @@ Start every frontend at Tier 0 (mockup). Graduate only when the current tier blo
 - Pages use App Router conventions (`/app/page.tsx`, `/app/layout.tsx`).
 - Design tokens from `platform-docs/design/design-tokens.css` map to Tailwind config.
 - No external component libraries beyond shadcn/ui. You own every component.
-- GitHub Pages deploys require `output: 'export'` in `next.config.js` and a `.nojekyll` file.
+- Tools are registered in `src/tools/registry.ts`. Every tool is a typed function with metadata.
+- Prisma schema is the single source of truth for database structure.
+- Environment variables in `.env.local` (local) and Docker env (production). Never committed.
 
-## When to Build a Frontend vs. Stay CLI
+## Key Commands
 
-| Frontend | CLI |
-|----------|-----|
-| Non-technical users (TwoDo) | Tools OpenClaw calls |
-| Visual data density (deal dashboard) | Developer workflows |
-| Shareable with someone who won't open a terminal | Automation scripts |
+```bash
+# Local development
+docker-compose -f docker-compose.dev.yml up -d   # Postgres + Redis
+npm run dev                                        # Next.js hot reload
+
+# Database
+npx prisma migrate dev                             # Create/apply migration
+npx prisma db seed                                 # Seed data
+npx prisma studio                                  # Visual DB browser
+
+# Testing
+npx vitest                                         # Watch mode
+npx vitest run                                     # CI mode
+
+# Production deploy
+git push origin main                               # Triggers full CI/CD pipeline
+```
