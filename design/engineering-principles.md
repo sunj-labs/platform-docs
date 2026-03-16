@@ -5,7 +5,10 @@ frontend. These are the rules that govern how we divide and structure code.
 
 ---
 
-## The Core Three
+## The Core Five
+
+Drawn from SOLID, GoF, and Fowler. Not all five apply to every decision —
+use the earn-your-keep test to decide which are in play.
 
 ### 1. Separation of Concerns (SoC)
 
@@ -37,19 +40,56 @@ deliberate.
 
 ---
 
-### 3. Interface-driven development
+### 3. Dependency Inversion
 
-Define the contract before writing the implementation. The interface is the
-design artifact. The implementation is the fulfillment.
+High-level modules define what they need. Low-level modules implement it.
+Never the reverse.
+
+The practical form: design the interface from the caller's perspective, then
+write the implementation to satisfy it. The caller owns the contract; the
+implementation is replaceable. This is why you write a function signature
+before the function body, and an API schema before the handler.
 
 ```
-What does the caller need to know?     → that is the interface
-What does the implementation need?     → that is hidden behind it
+Caller defines:    what it needs (the interface)
+Implementer owns:  how it's done (hidden behind the interface)
 ```
 
-This applies at every scale: a function signature, a module export, an API
-route, a queue job schema, an agent's input/output type. The pattern is
-identical — define the boundary, then build inward.
+The tell: if your high-level business logic imports a specific database driver,
+HTTP client, or third-party SDK directly — instead of depending on an
+abstraction it controls — the dependency is pointing the wrong way.
+
+---
+
+### 4. Cohesion — keep together what changes together
+
+The equal and opposite force to SoC. SoC says separate what changes for
+different reasons. Cohesion says don't separate what changes for the same
+reason.
+
+Over-decomposition is as harmful as under-decomposition. A module so thin it
+has no gravity — a one-line wrapper, a pass-through, a "util" with a single
+function — adds indirection without earning it.
+
+The tell: every feature requires touching six files. Each file is individually
+"clean" but the feature has no home.
+
+---
+
+### 5. Open/Closed
+
+Open for extension, closed for modification. When new variation arrives, you
+should be able to add it without editing the existing path.
+
+In practice: design extension points where variation is expected. A registry
+(new scrapers register themselves), a strategy (new scoring dimensions
+configure in), a plugin slot (new agents route without touching the
+orchestrator). The existing code doesn't change; the new code slots in.
+
+The tell: adding a new scraper source requires editing a switch statement
+in the worker. Adding a new scoring dimension requires adding an `if` branch
+to the scorer. Both are Open/Closed violations — the extension point is
+missing.
 
 ---
 
@@ -114,5 +154,21 @@ follows the same rules as everything else.
 
 ---
 
-*References: Fowler EAA Catalog, GoF Design Patterns, Dijkstra's Separation of
-Concerns (1974), DRY (Hunt & Thomas — The Pragmatic Programmer)*
+---
+
+## Canonical References
+
+When you need a pattern for a specific structural problem, look here first
+before inventing something new.
+
+| Source | What it covers | Link |
+|---|---|---|
+| **GoF Design Patterns** (Gamma, Helm, Johnson, Vlissides) | 23 object-oriented patterns for managing dependencies, composition, and behaviour. Creational, structural, behavioural. | https://en.wikipedia.org/wiki/Design_Patterns |
+| **Fowler — EAA Catalog** | Patterns for enterprise application architecture: domain logic, data access, ORM, presentation, distribution. The naming layer for backend structure. | https://martinfowler.com/eaaCatalog/ |
+| **Fowler — Refactoring** | Named moves for improving structure without changing behaviour. The vocabulary for code review and incremental cleanup. | https://refactoring.com/ |
+| **Dijkstra — SoC (1974)** | The original formulation. Short. Worth reading. | https://www.cs.utexas.edu/~EWD/ewd04xx/EWD447.PDF |
+| **Hunt & Thomas — The Pragmatic Programmer** | DRY, orthogonality, and the philosophy behind abstraction. | Book |
+
+These are the same relationship as `shadcn/ui` to the frontend stack — not
+libraries to install, but the canonical vocabulary and pattern catalogue to
+reach for when a structural decision needs a name.
