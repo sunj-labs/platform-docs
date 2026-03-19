@@ -1,7 +1,7 @@
 ---
 session_id: 2026-03-19-architect-review-skills
 date: 2026-03-19
-duration: ~2 hours (so far, ongoing)
+duration: ~5 hours
 repos: [sunj-labs/poa]
 tags: [architect-review, skills, rules, sdlc, process-improvement, digest]
 ---
@@ -45,6 +45,16 @@ Tool-failure hook upgraded to error → temperance → diagnose chain.
 - Cron scheduling works (verified with 3-min interval)
 - Gmail scope insufficient — `gmail.readonly` can't send. Need re-auth with `gmail.send` (#68)
 - Full fix steps documented on ticket
+
+### Engineering Quality Sprint (Phase 2 — overnight)
+- **#67** — Deal.createdAt index applied on production
+- **#66** — Scorer writes wrapped in Prisma $transaction
+- **#63** — Langfuse blocked (no credentials) — documented and skipped per pre-build gate
+- **#62** — Tenant context in all server components (dashboard, deals, detail)
+- **#65** — In-memory rate limiter on /api/deals (60 req/min/IP, 5 tests)
+- **#60** — Five Pandas brand identity: design tokens (cream/navy/purple/gold), nav + sign-in + digest branding
+- Tickets closed: #67, #66, #62, #65, #44, #46, #45
+- Tests: 160 → 165 (rate limiter)
 
 ## What Was Learned
 
