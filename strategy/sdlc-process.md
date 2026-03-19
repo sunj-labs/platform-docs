@@ -279,7 +279,7 @@ specs are written. This prevents naming drift across repos.
 
 ## Rules
 
-1. Nothing gets built without a work item.
+1. **Nothing gets built without a work item.** See "Deterministic Epic Creation" — the significance check enforces this. Trivial fixes log in commit messages; everything else creates an issue first.
 2. No work item over size M ships without a spec.
 3. Specs are reviewed before code starts.
 4. Design diagrams are produced before specs for any initiative with async flows or multiple components.
@@ -299,6 +299,53 @@ specs are written. This prevents naming drift across repos.
    reviews catch what file-level checks miss. The pre-build gate checks for
    stale artifacts; the UX fitness review (every 10 user-facing commits)
    checks for structural drift.
+
+## Deterministic Epic Creation
+
+Work enters the system through multiple doors (defects, reviews, user
+feedback, mid-session ideas). Every finding must be logged — not as a
+discretionary choice, but as a mandatory output of the significance check.
+
+**Why deterministic**: Unlogged work is invisible work. You can't prioritize,
+measure, coordinate, or audit what doesn't exist as a work item. Deterministic
+creation enables: traceability (code → epic → finding), DORA metrics (need the
+denominator), multi-agent coordination (shared backlog as memory), prioritization
+(compete explicitly), audit trail (decisions taken AND not taken), scope control
+(epics define boundaries).
+
+### When Epics Are Created
+
+| Trigger | Significance | Required Output |
+|---------|-------------|-----------------|
+| Defect diagnosis identifies root cause | Moderate+ | GitHub issue before fix code |
+| Architect review finding | Always | Issue per finding (batched OK) |
+| UX fitness review drift | Moderate+ | Issue with IA update scope |
+| Mid-session requirement surfaces | Moderate+ | Issue or checkbox on existing issue |
+| Build error reveals design gap | Moderate+ | Issue if fix needs design work |
+| User explicitly requests | Always | Issue |
+
+### When Epics Are NOT Created
+
+| Trigger | Significance | What Happens Instead |
+|---------|-------------|---------------------|
+| Trivial fix (typo, config, < 30 min) | Trivial | Log in commit message what was found and why no epic |
+| Duplicate of existing issue | N/A | Comment on existing issue |
+| Design discussion (not a finding) | N/A | Save to memory or docs, not backlog |
+
+### Epic Minimum Content
+
+Every epic must include:
+1. **What**: description of the finding or need
+2. **Why**: which trigger created it (defect, review, fitness, user request)
+3. **Design checklist**: which artifacts need creating or updating
+4. **UI surface**: does this touch a user-facing surface? (yes → UX translation needed)
+
+### Audit Trail for Decisions NOT Taken
+
+When significance check says "trivial — no epic needed," log that decision
+in the commit message: "Found X, assessed as trivial because Y." This
+prevents the pattern where small things become big problems and nobody
+remembers seeing them.
 
 ## Cadence
 
