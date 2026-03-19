@@ -71,3 +71,19 @@ Tool-failure hook upgraded to error → temperance → diagnose chain.
 - **Skills > CLAUDE.md for complex procedures** — CLAUDE.md should be concise (<100 lines). Complex procedures (architect review, diagnosis, testing) belong in skills that load on demand.
 - **Temperance as a skill** — explicitly naming the pause-before-action pattern makes it invocable. The urge to brute-force is a specific failure mode that needs a specific countermeasure.
 - **Chronicle entries need enforcement, not goodwill** — 2 days without entries because session-end protocol was skipped. Making session-start hook check for missing entries.
+
+---
+
+## Post Ideas
+
+### 1. "179 Tests and an Architect Review: Stabilizing Before Inviting Users"
+
+We had 1,169 deals flowing, auth working, and a shiny new domain. But the architect review found 3 critical blockers, enrichment had been silently failing for days, and the digest had never actually sent an email. Stabilization isn't glamorous — it's fixing silent failures, adding transaction boundaries, and writing tests for code paths nobody watches. The system went from "looks like it works" to "we can prove it works."
+
+### 2. "Building an SDLC with Hooks: How We Taught an AI Agent to Follow Process"
+
+Claude Code has hooks — shell scripts that fire on specific events (edit a file, run a command, start a session). We built 6 hooks that enforce our SDLC: pre-build gates that check for specs, pre-commit gates that require verification, session-start hooks that detect missed work. The agent still skips them sometimes. But now we can see when it does.
+
+### 3. "The Temperance Skill: Teaching an AI to Slow Down"
+
+Our AI agent has a throughput bias — it optimizes for shipping commits, not for shipping correctly. So we built a `/temperance` skill: a deliberate pause before implementation. "Is this the simplest correct approach? Am I brute-forcing to make the user happy? What would break?" It's the circuit breaker between "I know what to do" and "I've verified what to do."

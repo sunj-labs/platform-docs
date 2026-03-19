@@ -24,3 +24,19 @@ skills: [prisma-schema, next-auth, bullmq, sdlc-process, hook-design]
 - **PostToolUse diagnosis hook** catches errors Claude discovers (not just user-reported). Essential for preventing brute-force debugging.
 - **Multi-tenancy must be designed before data flows** — adding Tenant model after 600+ deals means migration + backfill.
 - **Persona copy system** needs fallback chains: STUDENT → COLLABORATOR → OPERATOR. Don't duplicate strings for every persona.
+
+---
+
+## Post Ideas
+
+### 1. "Building a Multi-Tenant Schema Before You Have Multiple Tenants"
+
+We added Tenant, TenantMember, and Thesis models on day 4 — with only one tenant. Why? Because retrofitting multi-tenancy after data flows is a migration nightmare. The schema cost us 2 hours. Retrofitting would have cost 2 days. Design the isolation boundary early, enforce it later. The cost of the abstraction is cheap; the cost of the migration is not.
+
+### 2. "Five Personas, One Codebase: How We Write Copy for a Family Business Tool"
+
+Mom needs plain English. The operator needs technical precision. The nephew needs kid-friendly language. The CPA needs professional terminology. We built a persona-aware copy system with fallback chains — STUDENT falls back to COLLABORATOR falls back to OPERATOR. Same UI, different voice. 146 lines of code, zero duplication.
+
+### 3. "SDLC Hooks That Actually Work: From 'You Should' to 'You Must'"
+
+We tried advisory hooks first: "you should run tests before committing." They got ignored under time pressure. Then we rewired them as blocking gates: "STOP — write your verification section before this commit proceeds." The difference between a suggestion and a gate is the difference between knowing the process and following it.

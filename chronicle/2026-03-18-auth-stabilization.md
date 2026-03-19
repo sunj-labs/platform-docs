@@ -68,3 +68,19 @@ This session had the most process failures to date:
 - 2 authenticated users (OPERATOR + VIEWER)
 - app.fivepandas.com live with HTTPS
 - Daily digest scheduled but Gmail scope needs updating (#68)
+
+---
+
+## Post Ideas
+
+### 1. "38 Commits in One Day: What Went Wrong and What Went Right"
+
+Our biggest session: domain purchased, Cloudflare tunnel set up, auth working, BizQuest scraper fixed, architect review completed, 8 skills created. But also: middleware broke API routes, auth took 4 commits to fix, hooks were ignored repeatedly. The lesson isn't about velocity — it's about the difference between shipping fast and shipping well. We shipped 38 commits. We should have shipped 20, each verified.
+
+### 2. "When Google Calls Your New Domain 'Dangerous': OAuth on Day-One Domains"
+
+We bought fivepandas.com, set up Cloudflare Tunnel, configured Google OAuth, and hit "Sign in with Google." Chrome showed a red "Dangerous site" screen. Not a bug — Google Safe Browsing flags brand-new domains performing OAuth flows. The fix: wait 24-48 hours for reputation to build. The lesson: factor domain age into your launch timeline.
+
+### 3. "The Redirect Loop That Taught Us About Database Sessions"
+
+NextAuth with PrismaAdapter uses database sessions, not JWT. Our middleware used `getToken()` — a JWT-only function. It returned null for every request, redirecting authenticated users back to sign-in, which redirected back, forever. Three commits to fix something that a 30-second check of the NextAuth docs would have prevented. Now we have a rule: understand your auth architecture before writing auth code.
